@@ -20,7 +20,17 @@ make_veg_param_file <- function(hru_table){
   
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
+  require("plyr")
+  
   hru_df <- read.csv(hru_table)
+  cells <- unique(hru_df$CELL_ID)
+  
+  for (cell in cells){
+    cell_records <- hru_df[which(hru_df$CELL_ID==cell),]
+    #cell_records_sort <- cell_records[with(cell_records, order(BAND_ID, CLASS)),]
+    cell_records_sort <- arrange(cell_records, BAND_ID, CLASS)
+    no_records <- length(cell_records_sort[[1]])
+  }
   
   
 }
