@@ -32,15 +32,16 @@ make_veg_param_file <- function(hru_df){
   #Load dependencies
   require("plyr")
   
-  cells <- unique(hru_df$CELL_ID)   #Vector of unique cell IDs
-  no_cells <- length(cells)
-  
   #Initialize variables
   out_list <- NULL     #Function return value as list output
   cell_vec <- NULL     #Track cell IDs as vector
   no_recs_vec <- NULL  #Track number of HRUs by cell as vector
+  no_bands_vec <- NULL #Track number of bands by cell as vector
   hru <- NULL          #Single HRU parameter record
-  params <- NULL       #Matrix of HRU parameter records for a given cell
+  bnd <- NULL          #Single band parameter record
+  vparams <- NULL      #Matrix of HRU parameter records for a given cell
+  bparams <- NULL      #Matrix of band parameter records for a given cell
+  max_bands = 15
   
   #Vegetation rooting parameters
   ## TODO - set these parameters as a function of vegetation class; supply as function argument?
@@ -51,55 +52,74 @@ make_veg_param_file <- function(hru_df){
   rfrac2 = 0.65  #Fraction of roots in middle root zone [m]
   rfrac3 = 0.25  #Fraction of roots in bottom root zone [m]
   
+  #Pre-process data
+  hru_df <- arrange(hru_df, CELL_ID, BAND_ID, CLASS)  #Ensure data frame is sorted (functionally irrelevant, just looks better)
+  cells <- unique(hru_df$CELL_ID)   #Obtain vector of unique cell IDs
+  no_cells <- length(cells)
+  band_df <- ddply(hru_df, .(CELL_ID, BAND_ID), summarise, AREA_FRAC=sum(AREA_FRAC),
+                        ELEVATION=mean(ELEVATION))  #Summary by cell and elevation band
+  
   #Loop through individual cells
   for (cell in cells){
     
-    #sub-set input data frame by CELL_ID and determine number of records (i.e. HRUs) by cell
+    #sub-set input data frames by CELL_ID and determine number of records (i.e. HRUs) by cell
     recs <- hru_df[which(hru_df$CELL_ID==cell),]
     no_recs <- length(recs[[1]])
-
+    
+    #Sub-set data by band and get band ids for current cell
+    bands <- band_df[which(band_df$CELL_ID==cell),]
+    band_ids <- bands$BAND_ID
+    no_bands <- length(band_ids)
+    
     #Ensure that area fractions sum to 1; correct for rounding errors if necessary
     #Determine area fraction correction factor (will equal one if area fractions sum to one)
     area_corr <- 1 + (1 - sum(recs$AREA_FRAC))/sum(recs$AREA_FRAC)
+    HRU_AF <- recs$AREA_FRAC * area_corr
+    BAND_AF <- bands$AREA_FRAC * area_corr
     
-    #Sort records so that BAND_ID and CLASS are in ascending order
-    recs_sort <- arrange(recs, BAND_ID, CLASS)
-  
-    #Get unique BAND_ID values (not yet used - required for building band file)
-    bands <- unique(recs_sort$BAND_ID)
-    
-    #Loop through individual records
+    #Loop through individual hru records
     for (r in 1:no_recs){
-      af_adj <- recs_sort$AREA_FRAC[r]*area_corr
       
       #Determine band index - currently indexed from minimum BAND_ID per cell
       #TODO - should band index be based on common base elevation/BAND_ID?
-      band_index <- which(bands == recs_sort$BAND_ID[r])-1
+      band_index <- which(band_ids == recs$BAND_ID[r])-1
       
-      hru <- rbind(hru, c(recs_sort$CLASS[r], af_adj, thick1, rfrac1, thick2, rfrac2, thick3, rfrac3, band_index))
+      hru <- rbind(hru, c(recs$CLASS[r], HRU_AF[r], thick1, rfrac1, thick2, rfrac2, thick3, rfrac3, band_index))
     }
     
+    #Loop through individual bands
+    for (b in 1:no_bands){
+      bnd <- rbind(bnd, c(bands$ELEVATION[b], BAND_AF[b]))
+    }
+    
+    #Update variables
     cell_vec <- c(cell_vec, cell)
     no_recs_vec <- c(no_recs_vec, no_recs)
-    params <- append(params, list(hru))
+    vparams <- append(vparams, list(hru))
+    no_bands_vec <- c(no_bands_vec, no_bands)
+    bparams <- append(bparams, list(bnd))
     hru <- NULL
+    bnd <- NULL
     
   }
   
-  out_list <- list(NO_CELLS=no_cells, CELL_ID=cell_vec, NO_HRU=no_recs_vec, PARAM=params)
+  #Generate output list
+  out_list <- list(NO_CELLS=no_cells, CELL_ID=cell_vec, NO_HRU=no_recs_vec, NO_BANDS=no_bands_vec,
+                   VPARAM=vparams, BAND=bparams)
   
   #Write HRU parameters to VIC-formatted file
-  out_file <- file(description="vpf_default.txt", open="w")
+  vpf_file <- file(description="vpf_default.txt", open="w")
   for (x in 1:no_cells){
     txt1 <- sprintf(c("%.0f","%5.0f"), c(out_list$CELL_ID[x], out_list$NO_HRU[x]))
-    write(txt1, file=out_file, ncolumns=2)
+    write(txt1, file=vpf_file, ncolumns=2)
     for (y in 1:out_list$NO_HRU[x]){
       txt2 <- sprintf(c("%8.0f","%15.12f","%5.2f","%5.2f","%5.2f","%5.2f","%5.2f","%5.2f","%4.0f"),
                      out_list$PARAM[[x]][y,])
-      write(txt2, file=out_file, ncolumns=9)
+      write(txt2, file=vpf_file, ncolumns=9)
     }
   }
-  close(out_file)
+  
+  close(vpf_file)
   
   return(out_list)
   
