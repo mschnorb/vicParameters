@@ -1,6 +1,6 @@
-make_veg_param_file <- function(hru_df){
+make_VIC_param <- function(hru_df, output_vpf=FALSE, output_snb=FALSE){
   
-  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
   #DESCRIPTION
   # Creates formatted output of vegetation and band parameters for VIC model version
@@ -8,16 +8,18 @@ make_veg_param_file <- function(hru_df){
   # Units (HRUs).
   
   #USAGE
-  # make_veg_param_file(hru_df)
+  # make_VIC_param_file(hru_df)
   
   #ARGUMENTS:
   # hru_table   - HRU attribute table as data frame; must contain following fields: CLASS,
   #                 CELL_ID, BAND_ID, AREA_FRAC and ELEVATION
+  # output_vpf  - if TRUE, vevegetation parameter file is written; default is FALSE
+  # output_snb  - if TRUE, band parameter file is written; default is FALSE
   
   #DETAILS:
   # ...
   
-  #VALUE:
+  #OUTPUT:
   # Function returns 6-element list of VIC cell metadata, vegetation and band parameters.
   # List elements are as follows:
   #   $NO_CELLS:  number of VIC cells in computational domain
@@ -29,9 +31,9 @@ make_veg_param_file <- function(hru_df){
   #   $BAND:      List, where each item (one per cell) is a NO_BANDSx2 size matrix of
   #                 elevation band parameters, with one record per cell band
   #
-  # Function side-effect is to write default vegetation parameter file "vpf_default.txt" and
-  #band parameter file "snb_default.txt" to the current working directory. 
-  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # If selected by user, function side-effect is to write default vegetation parameter file
+  #"vpf_default.txt" and band parameter file "snb_default.txt" to the current working directory. 
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
   #Load dependencies
   require("plyr")
@@ -99,8 +101,10 @@ make_veg_param_file <- function(hru_df){
     #Update variables
     cell_vec <- c(cell_vec, cell)
     no_recs_vec <- c(no_recs_vec, no_recs)
+    colnames(hru) <- c("CLASS", "AFRAC", "THICK1", "RFRAC1", "THICK2", "RFRAC2", "THICK3", "RFRAC3", "BAND")
     vparams <- append(vparams, list(hru))
     no_bands_vec <- c(no_bands_vec, no_bands)
+    colnames(bnd) <- c("ELEV", "AFRAC")
     bparams <- append(bparams, list(bnd))
     hru <- NULL
     bnd <- NULL
@@ -112,30 +116,34 @@ make_veg_param_file <- function(hru_df){
                    VPARAM=vparams, BAND=bparams)
   
   #Write HRU parameters to VIC-formatted file
-  vpf_file <- file(description="vpf_default.txt", open="w")
-  for (x in 1:no_cells){
-    txt_hdr <- sprintf(c("%.0f","%5.0f"), c(out_list$CELL_ID[x], out_list$NO_HRU[x]))
-    write(txt_hdr, file=vpf_file, ncolumns=2)
-    for (y in 1:out_list$NO_HRU[x]){
-      txt_par <- sprintf(c("%8.0f","%15.12f","%5.2f","%5.2f","%5.2f","%5.2f","%5.2f","%5.2f","%4.0f"),
-                     out_list$PARAM[[x]][y,])
-      write(txt_par, file=vpf_file, ncolumns=9)
+  if (output_vpf) {
+    vpf_file <- file(description="vpf_default.txt", open="w")
+    for (x in 1:no_cells){
+      txt_hdr <- sprintf(c("%.0f","%5.0f"), c(out_list$CELL_ID[x], out_list$NO_HRU[x]))
+      write(txt_hdr, file=vpf_file, ncolumns=2)
+      for (y in 1:out_list$NO_HRU[x]){
+        txt_par <- sprintf(c("%8.0f","%15.12f","%5.2f","%5.2f","%5.2f","%5.2f","%5.2f","%5.2f","%4.0f"),
+                      out_list$VPARAM[[x]][y,])
+        write(txt_par, file=vpf_file, ncolumns=9)
+      }
     }
+    close(vpf_file)
   }
-  close(vpf_file)
   
   #Write band parameters to VIC-formatted file
-  band_file <- file(description="snb_default.txt", open="w")
-  for (x in 1:no_cells){
-    #Formatted text for cell ID, band elevations, area frqaction and dummy values for
-    #precipitation gradient; pad with zeros to max_bands
-    txt_elev <- sprintf("%5.0f", c(out_list$CELL_ID[x], out_list$BAND[[x]][,1],
-              rep(0, max_bands-out_list$NO_BANDS[x])))
-    txt_af <- sprintf("%14.12f", c(out_list$BAND[[x]][,2], rep(0, max_bands-out_list$NO_BANDS[x])))
-    txt_pg <- sprintf("%3.1f", rep(0,max_bands))
-    write(c(txt_elev, txt_af, txt_pg), file=band_file, ncolumns=3*max_bands+1)
+  if (output_snb) {
+    band_file <- file(description="snb_default.txt", open="w")
+    for (x in 1:no_cells){
+      #Formatted text for cell ID, band elevations, area frqaction and dummy values for
+      #precipitation gradient; pad with zeros to max_bands
+      txt_elev <- sprintf("%5.0f", c(out_list$CELL_ID[x], out_list$BAND[[x]][,1],
+                rep(0, max_bands-out_list$NO_BANDS[x])))
+      txt_af <- sprintf("%14.12f", c(out_list$BAND[[x]][,2], rep(0, max_bands-out_list$NO_BANDS[x])))
+      txt_pg <- sprintf("%3.1f", rep(0,max_bands))
+      write(c(txt_elev, txt_af, txt_pg), file=band_file, ncolumns=3*max_bands+1)
+    }
+    close(band_file)
   }
-  close(band_file)
   
   return(out_list)
   
