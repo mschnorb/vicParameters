@@ -3,8 +3,8 @@ make_veg_param_file <- function(hru_df){
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
   #DESCRIPTION
-  # Creates formatted output of vegetation parameters for VIC model version 4.1.2glacier;
-  #vegetation parameters based on the use of Hydrologic Response Units (HRUs).
+  # Creates formatted output of vegetation and band parameters for VIC model version
+  #4.1.2glacier; vegetation parameters based on the use of Hydrologic Response Units (HRUs).
   
   #USAGE
   # make_veg_param_file(hru_df)
@@ -17,16 +17,19 @@ make_veg_param_file <- function(hru_df){
   # ...
   
   #VALUE:
-  # Function returns 4-item list of VIC cell metadata and vegetation parameters. List items are
-  #   as follows:
-  #   $NO_CELLS:  single number of VIC cells in computational domain
+  # Function returns 6-item list of VIC cell metadata, vegetation and band parameters.
+  #List items are as follows:
+  #   $NO_CELLS:  number of VIC cells in computational domain
   #   $CELL_ID:   vector of cell IDs for every cell in computational domain
   #   $NO_HRU:    vector giving number of HRUs per VIC cell
-  #   $PARAM:     List, where each item (one per cell) contains NO_HRUx9 size matrix of HRU
+  #   $NO_BANDS:  vector giving number of bands per VIC cell
+  #   $VPARAM:    List, where each item (one per cell) contains NO_HRUx9 size matrix of HRU
   #                 parameters, with one record per HRU
+  #   $BAND:      List, where each item (one per cell) contains NO_BANDSx2 size matrix of
+  #                 elevation band parameters, with one record per cell band
   #
-  # Function side-effect is to write default vegetation parameter file "vpf_default.txt" to
-  #current working directory. 
+  # Function side-effect is to write default vegetation parameter file "vpf_default.txt" and
+  #band parameter file "snb_default.txt" to the current working directory. 
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
   #Load dependencies
@@ -41,7 +44,7 @@ make_veg_param_file <- function(hru_df){
   bnd <- NULL          #Single band parameter record
   vparams <- NULL      #Matrix of HRU parameter records for a given cell
   bparams <- NULL      #Matrix of band parameter records for a given cell
-  max_bands = 15
+  max_bands = 15       #Maximum number of bands for band file
   
   #Vegetation rooting parameters
   ## TODO - set these parameters as a function of vegetation class; supply as function argument?
@@ -110,16 +113,28 @@ make_veg_param_file <- function(hru_df){
   #Write HRU parameters to VIC-formatted file
   vpf_file <- file(description="vpf_default.txt", open="w")
   for (x in 1:no_cells){
-    txt1 <- sprintf(c("%.0f","%5.0f"), c(out_list$CELL_ID[x], out_list$NO_HRU[x]))
-    write(txt1, file=vpf_file, ncolumns=2)
+    txt_hdr <- sprintf(c("%.0f","%5.0f"), c(out_list$CELL_ID[x], out_list$NO_HRU[x]))
+    write(txt_hdr, file=vpf_file, ncolumns=2)
     for (y in 1:out_list$NO_HRU[x]){
-      txt2 <- sprintf(c("%8.0f","%15.12f","%5.2f","%5.2f","%5.2f","%5.2f","%5.2f","%5.2f","%4.0f"),
+      txt_par <- sprintf(c("%8.0f","%15.12f","%5.2f","%5.2f","%5.2f","%5.2f","%5.2f","%5.2f","%4.0f"),
                      out_list$PARAM[[x]][y,])
-      write(txt2, file=vpf_file, ncolumns=9)
+      write(txt_par, file=vpf_file, ncolumns=9)
     }
   }
-  
   close(vpf_file)
+  
+  #Write band parameters to VIC-formatted file
+  band_file <- file(description="snb_default.txt", open="w")
+  for (x in 1:no_cells){
+    #Formatted text for cell ID, band elevations, area frqaction and dummy values for
+    #precipitation gradient; pad with zeros to max_bands
+    txt_elev <- sprintf("%5.0f", c(out_list$CELL_ID[x], out_list$BAND[[x]][,1],
+              rep(0, max_bands-out_list$NO_BANDS[x])))
+    txt_af <- sprintf("%14.12f", c(out_list$BAND[[x]][,2], rep(0, max_bands-out_list$NO_BANDS[x])))
+    txt_pg <- sprintf("%3.1f", rep(0,max_bands))
+    write(c(txt_elev, txt_af, txt_pg), file=band_file, ncolumns=3*max_bands+1)
+  }
+  close(band_file)
   
   return(out_list)
   
