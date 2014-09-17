@@ -17,8 +17,7 @@ make_VIC_param <- function(hru_df, output_vpf=FALSE, output_snb=FALSE){
   # output_snb  - if TRUE, band parameter file is written; default is FALSE
   
   #DETAILS:
-  # ...
-  
+  # 
   #OUTPUT:
   # Function returns 6-element list of VIC cell metadata, vegetation and band parameters.
   # List elements are as follows:
@@ -32,7 +31,7 @@ make_VIC_param <- function(hru_df, output_vpf=FALSE, output_snb=FALSE){
   #                 elevation band parameters, with one record per cell band
   #
   # If selected by user, function side-effect is to write default vegetation parameter file
-  #"vpf_default.txt" and band parameter file "snb_default.txt" to the current working directory. 
+  #"vpf_default.txt" and/or band parameter file "snb_default.txt" to the current working directory. 
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
   #Load dependencies
@@ -134,13 +133,12 @@ make_VIC_param <- function(hru_df, output_vpf=FALSE, output_snb=FALSE){
   if (output_snb) {
     band_file <- file(description="snb_default.txt", open="w")
     for (x in 1:no_cells){
-      #Formatted text for cell ID, band elevations, area frqaction and dummy values for
+      #Formatted text for cell ID, band area fraction, elevation and add dummy values for
       #precipitation gradient; pad with zeros to max_bands
-      txt_elev <- sprintf("%5.0f", c(out_list$CELL_ID[x], out_list$BAND[[x]][,1],
-                rep(0, max_bands-out_list$NO_BANDS[x])))
       txt_af <- sprintf("%14.12f", c(out_list$BAND[[x]][,2], rep(0, max_bands-out_list$NO_BANDS[x])))
-      txt_pg <- sprintf("%3.1f", rep(0,max_bands))
-      write(c(txt_elev, txt_af, txt_pg), file=band_file, ncolumns=3*max_bands+1)
+      txt_elev <- sprintf("%5.0f", c(out_list$BAND[[x]][,1], rep(0, max_bands-out_list$NO_BANDS[x])))      
+      txt_pg <- sprintf("%7.5f", rep(1/max_bands,max_bands))
+      write(c(sprintf("%5.0f", out_list$CELL_ID[x]), txt_af, txt_elev, txt_pg), file=band_file, ncolumns=3*max_bands+1)
     }
     close(band_file)
   }
