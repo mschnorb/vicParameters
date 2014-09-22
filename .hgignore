@@ -1,0 +1,6 @@
+# use glob syntax
+syntax: glob
+
+.Rproj*
+snb_default.txt
+vpf_default.txt
