@@ -1,4 +1,4 @@
-make_VIC_param <- function(hru_df, output_vpf=FALSE, output_snb=FALSE){
+make_VIC_param <- function(hru_df, root_df, write_vpf=FALSE, write_snb=FALSE){
   
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
@@ -8,12 +8,14 @@ make_VIC_param <- function(hru_df, output_vpf=FALSE, output_snb=FALSE){
   # Units (HRUs).
   
   #USAGE
-  # make_VIC_param_file(hru_df)
+  # make_VIC_param_file(hru_df, root_df, [write_vpf=TRUE], [write_snb=TRUE])
   
   #ARGUMENTS:
-  # hru_table   - HRU attribute table as data frame; must contain following fields: CLASS,
+  # hru_df      - HRU attribute table as data frame; must contain following fields: CLASS,
   #                 CELL_ID, BAND_ID, AREA_FRAC and ELEVATION
-  # output_vpf  - if TRUE, vevegetation parameter file is written; default is FALSE
+  # root_df     - Vegetation rooting parameters as data frame; must contain following fields:
+  #                 CLASS, RTHICK1, RTHICK2, RTHICK3, RFRAC1, RFRAC2 and RFRAC3
+  # output_vpf  - if TRUE, vegetation parameter file is written; default is FALSE
   # output_snb  - if TRUE, band parameter file is written; default is FALSE
   
   #DETAILS:
@@ -47,16 +49,7 @@ make_VIC_param <- function(hru_df, output_vpf=FALSE, output_snb=FALSE){
   vparams <- NULL      #Matrix of HRU parameter records for a given cell
   bparams <- NULL      #Matrix of band parameter records for a given cell
   max_bands = 15       #Maximum number of bands for band file
-  
-  #Vegetation rooting parameters
-  ## TODO - set these parameters as a function of vegetation class; supply as function argument?
-  thick1 = 0.1   #Thickness of top root zone [m]
-  thick2 = 1.0   #Thickness of middle root zone [m]
-  thick3 = 1.0   #Thickness of bottom root zone [m]
-  rfrac1 = 0.1   #Fraction of roots in top root zone [m]
-  rfrac2 = 0.65  #Fraction of roots in middle root zone [m]
-  rfrac3 = 0.25  #Fraction of roots in bottom root zone [m]
-  
+ 
   #Pre-process data
   hru_df <- arrange(hru_df, CELL_ID, BAND_ID, CLASS)  #Ensure data frame is sorted (functionally irrelevant, just looks better)
   cells <- unique(hru_df$CELL_ID)   #Obtain vector of unique cell IDs
@@ -89,6 +82,15 @@ make_VIC_param <- function(hru_df, output_vpf=FALSE, output_snb=FALSE){
       #TODO - should band index be based on common base elevation/BAND_ID?
       band_index <- which(band_ids == recs$BAND_ID[r])-1
       
+      #Look up appropriate rooting parameters from root_df based on vegetation class (CLASS)
+      rt_index <- which(root_df$CLASS==recs$CLASS[r])
+      thick1 = root_df$RTHICK1[rt_index]   #Thickness of top root zone [m]
+      thick2 = root_df$RTHICK2[rt_index]   #Thickness of middle root zone [m]
+      thick3 = root_df$RTHICK3[rt_index]   #Thickness of bottom root zone [m]
+      rfrac1 = root_df$RFRAC1[rt_index]    #Fraction of roots in top root zone [m]
+      rfrac2 = root_df$RFRAC2[rt_index]    #Fraction of roots in middle root zone [m]
+      rfrac3 = root_df$RFRAC3[rt_index]    #Fraction of roots in bottom root zone [m]
+      
       hru <- rbind(hru, c(recs$CLASS[r], HRU_AF[r], thick1, rfrac1, thick2, rfrac2, thick3, rfrac3, band_index))
     }
     
@@ -115,7 +117,7 @@ make_VIC_param <- function(hru_df, output_vpf=FALSE, output_snb=FALSE){
                    VPARAM=vparams, BAND=bparams)
   
   #Write HRU parameters to VIC-formatted file
-  if (output_vpf) {
+  if (write_vpf) {
     vpf_file <- file(description="vpf_default.txt", open="w")
     for (x in 1:no_cells){
       txt_hdr <- sprintf(c("%.0f","%5.0f"), c(out_list$CELL_ID[x], out_list$NO_HRU[x]))
@@ -130,14 +132,14 @@ make_VIC_param <- function(hru_df, output_vpf=FALSE, output_snb=FALSE){
   }
   
   #Write band parameters to VIC-formatted file
-  if (output_snb) {
+  if (write_snb) {
     band_file <- file(description="snb_default.txt", open="w")
     for (x in 1:no_cells){
       #Formatted text for cell ID, band area fraction, elevation and add dummy values for
       #precipitation gradient; pad with zeros to max_bands
       txt_af <- sprintf("%14.12f", c(out_list$BAND[[x]][,2], rep(0, max_bands-out_list$NO_BANDS[x])))
       txt_elev <- sprintf("%5.0f", c(out_list$BAND[[x]][,1], rep(0, max_bands-out_list$NO_BANDS[x])))      
-      txt_pg <- sprintf("%7.5f", rep(1/max_bands,max_bands))
+      txt_pg <- sprintf("%7.5f", c(rep(1/out_list$NO_BANDS[x],out_list$NO_BANDS[x]), rep(0, max_bands-out_list$NO_BANDS[x])))
       write(c(sprintf("%5.0f", out_list$CELL_ID[x]), txt_af, txt_elev, txt_pg), file=band_file, ncolumns=3*max_bands+1)
     }
     close(band_file)
