@@ -48,7 +48,7 @@ make_VIC_param <- function(hru_df, root_df, write_vpf=FALSE, write_snb=FALSE){
   bnd <- NULL          #Single band parameter record
   vparams <- NULL      #Matrix of HRU parameter records for a given cell
   bparams <- NULL      #Matrix of band parameter records for a given cell
-  max_bands = 15       #Maximum number of bands for band file
+  max_bands = 21       #Maximum number of bands for band file
  
   #Pre-process data
   hru_df <- arrange(hru_df, CELL_ID, BAND_ID, CLASS)  #Ensure data frame is sorted (functionally irrelevant, just looks better)
