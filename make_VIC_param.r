@@ -1,4 +1,10 @@
-make_VIC_param <- function(hru_df, root_df, write_vpf=FALSE, write_snb=FALSE){
+make_VIC_param <- function(hru_df,
+                           root_df, 
+                           null_glaciers=FALSE, 
+                           glacierID=22, 
+                           write_vpf=FALSE, 
+                           write_snb=FALSE, 
+                           max_bands=20){
   
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
@@ -8,15 +14,19 @@ make_VIC_param <- function(hru_df, root_df, write_vpf=FALSE, write_snb=FALSE){
   # Units (HRUs).
   
   #USAGE
-  # make_VIC_param_file(hru_df, root_df, [write_vpf=TRUE], [write_snb=TRUE])
+  # make_VIC_param_file(hru_df, root_df, [null_glaciers=FALSE], [glacierID=22], [write_vpf=TRUE], [write_snb=TRUE], [max_bands=n])
   
   #ARGUMENTS:
   # hru_df      - HRU attribute table as data frame; must contain following fields: CLASS,
   #                 CELL_ID, BAND_ID, AREA_FRAC and ELEVATION
   # root_df     - Vegetation rooting parameters as data frame; must contain following fields:
   #                 CLASS, RTHICK1, RTHICK2, RTHICK3, RFRAC1, RFRAC2 and RFRAC3
-  # output_vpf  - if TRUE, vegetation parameter file is written; default is FALSE
-  # output_snb  - if TRUE, band parameter file is written; default is FALSE
+  # null_glaciers - if TRUE, add NULL glaciers to elevation bands missing glacier HRUs
+  # glacierID   - define vegetation class id fo rglacier cover; only required if null_glaciers=TRUE
+  # write_vpf   - if TRUE, vegetation parameter file is written; default is FALSE
+  # writ_snb    - if TRUE, band parameter file is written; default is FALSE
+  # max_bands   - maximum number of bands for band file
+  #
   
   #DETAILS:
   # 
@@ -44,14 +54,13 @@ make_VIC_param <- function(hru_df, root_df, write_vpf=FALSE, write_snb=FALSE){
   cell_vec <- NULL     #Track cell IDs as vector
   no_recs_vec <- NULL  #Track number of HRUs by cell as vector
   no_bands_vec <- NULL #Track number of bands by cell as vector
-  hru <- NULL          #Single HRU parameter record
-  bnd <- NULL          #Single band parameter record
+  hru <- NULL          #Dynamic matrix of HRU parameter records
+  bnd <- NULL          #Dynamic matrix of band parameter records
   vparams <- NULL      #Matrix of HRU parameter records for a given cell
   bparams <- NULL      #Matrix of band parameter records for a given cell
-  max_bands <- 15     #Maximum number of bands for band file
  
   #Pre-process data
-  hru_df <- arrange(hru_df, CELL_ID, BAND_ID, CLASS)  #Ensure data frame is sorted (functionally irrelevant, just looks better)
+  hru_df <- arrange(hru_df, CELL_ID, BAND_ID, CLASS)  #Ensure data frame is sorted
   cells <- unique(hru_df$CELL_ID)   #Obtain vector of unique cell IDs
   no_cells <- length(cells)
   band_df <- ddply(hru_df, .(CELL_ID, BAND_ID), summarise, AREA_FRAC=sum(AREA_FRAC),
@@ -75,12 +84,29 @@ make_VIC_param <- function(hru_df, root_df, write_vpf=FALSE, write_snb=FALSE){
     HRU_AF <- recs$AREA_FRAC * area_corr
     BAND_AF <- bands$AREA_FRAC * area_corr
     
+    GlacierInBand <- FALSE  #Set to TRUE if a glacier HRU (CLASS=glacierID) exists in current band
+    prevBandIndex <- 0      #Track band index of previous record; initialize as zero for first record 
+    numNullGlaciers <- 0    #Number of null glacier HRUs in cell - add to record length
+    
     #Loop through individual hru records
     for (r in 1:no_recs){
       
       #Determine band index - currently indexed from minimum BAND_ID per cell
       #TODO - should band index be based on common base elevation/BAND_ID?
       band_index <- which(band_ids == recs$BAND_ID[r])-1
+      
+      #Add NULL glacier HRUs if option selected by user
+      if(null_glaciers) {
+        if (prevBandIndex!=band_index){
+          if (!GlacierInBand){
+            hru <- rbind(hru, c(glacierID, 0.0, 0.1, 1.00, 0.1, 0.0, 0.1, 0.0, prevBandIndex))
+            numNullGlaciers <- numNullGlaciers + 1
+          }
+          GlacierInBand <- FALSE
+        }
+        prevBandIndex <- band_index
+        if (recs$CLASS[r]==glacierID) GlacierInBand<-TRUE
+      }
       
       #Look up appropriate rooting parameters from root_df based on vegetation class (CLASS)
       rt_index <- which(root_df$CLASS==recs$CLASS[r])
@@ -101,7 +127,7 @@ make_VIC_param <- function(hru_df, root_df, write_vpf=FALSE, write_snb=FALSE){
     
     #Update variables
     cell_vec <- c(cell_vec, cell)
-    no_recs_vec <- c(no_recs_vec, no_recs)
+    no_recs_vec <- c(no_recs_vec, no_recs+numNullGlaciers)
     colnames(hru) <- c("CLASS", "AFRAC", "THICK1", "RFRAC1", "THICK2", "RFRAC2", "THICK3", "RFRAC3", "BAND")
     vparams <- append(vparams, list(hru))
     no_bands_vec <- c(no_bands_vec, no_bands)
