@@ -5,6 +5,10 @@ plot_veg_hypsometry <- function(hru_df, by_cell=FALSE, by_basin=FALSE){
   
   require("ggplot2")
   
+  #Set legend properties
+  veg_class <- sort(unique(hru_df$CLASS))
+  leg <- set_veg_legend(veg_class)
+  
   no_cells <- length(unique(hru_df$CELL_ID))
   
   if (!by_cell) hru_df$AREA_FRAC <- hru_df$AREA_FRAC/no_cells
@@ -27,6 +31,7 @@ plot_veg_hypsometry <- function(hru_df, by_cell=FALSE, by_basin=FALSE){
       gplot <- 
       ggplot(temp, aes(x=BAND_ID, y=AREA_FRAC)) + 
       geom_bar(aes(fill=factor(CLASS)), stat="identity") +
+      scale_fill_manual(labels = leg$lbl, values=leg$clr) +
       theme_bw() + 
       labs(x="Elevation (m)", y="Glacier Area Fraction", color="Cell ID", fill="Land Cover", 
            title="Vegetation Class Hypsometry") +
@@ -37,21 +42,18 @@ plot_veg_hypsometry <- function(hru_df, by_cell=FALSE, by_basin=FALSE){
       gplot <- 
         ggplot(temp, aes(x=BAND_ID, y=AREA_FRAC)) + 
         geom_bar(aes(fill=factor(CLASS)), stat="identity") +
-        #scale_fill_brewer(type="qual", palette="Paired") +
-        scale_fill_manual(labels = c("Alpine Conifer", "High-elevation Conifer", "Mid-elevation Conifer",
-                    "Humid Conifer", "Temperate Deciduous", "Shrub", "Grassland","Grass-lichen-moss", 
-                    "Wetland", "Barren", "Water", "Ice"),
-              values=c("#CCFF66", "#99FF00", "#33FF00", "#336600", "#CCFF99", "#FFCC99",
-                  "#CCCC33", "#CCCC99", "#009966", "#996633", "#3399FF", "#99CCFF")) +
+        scale_fill_manual(labels = leg$lbl, values=leg$clr) +
         theme_bw() + 
         labs(x="Elevation (m)", y="Area Fraction", color="Cell ID", fill="Land Cover") +
         facet_wrap(~basin) +
         coord_flip()
 
   } else {
+
     gplot <- 
       ggplot(temp, aes(x=BAND_ID, y=AREA_FRAC)) + 
       geom_bar(aes(fill=factor(CLASS)), stat="identity") +
+      scale_fill_manual(labels = leg$lbl, values=leg$clr) +
       theme_bw() + 
       labs(x="Elevation (m)", y="Area Fraction", color="Cell ID", fill="Land Cover", 
            title="Vegetation Class Hypsometry") +

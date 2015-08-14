@@ -22,7 +22,7 @@ make_VIC_param <- function(hru_df,
   # root_df     - Vegetation rooting parameters as data frame; must contain following fields:
   #                 CLASS, RTHICK1, RTHICK2, RTHICK3, RFRAC1, RFRAC2 and RFRAC3
   # null_glaciers - if TRUE, add NULL glaciers to elevation bands missing glacier HRUs
-  # glacierID   - define vegetation class id fo rglacier cover; only required if null_glaciers=TRUE
+  # glacierID   - define vegetation class id for glacier cover; only required if null_glaciers=TRUE
   # write_vpf   - if TRUE, vegetation parameter file is written; default is FALSE
   # writ_snb    - if TRUE, band parameter file is written; default is FALSE
   # max_bands   - maximum number of bands for band file
