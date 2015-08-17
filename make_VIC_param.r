@@ -1,9 +1,11 @@
 make_VIC_param <- function(hru_df,
-                           root_df, 
+                           root_df,
                            null_glaciers=FALSE, 
                            glacierID=22, 
                            write_vpf=FALSE, 
-                           write_snb=FALSE, 
+                           write_snb=FALSE,
+                           vpf_filename="vpf_default.txt",
+                           snb_filename="snb_default.txt",
                            max_bands=20){
   
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -17,15 +19,17 @@ make_VIC_param <- function(hru_df,
   # make_VIC_param_file(hru_df, root_df, [null_glaciers=FALSE], [glacierID=22], [write_vpf=TRUE], [write_snb=TRUE], [max_bands=n])
   
   #ARGUMENTS:
-  # hru_df      - HRU attribute table as data frame; must contain following fields: CLASS,
+  # hru_df        - HRU attribute table as data frame; must contain following fields: CLASS,
   #                 CELL_ID, BAND_ID, AREA_FRAC and ELEVATION
-  # root_df     - Vegetation rooting parameters as data frame; must contain following fields:
+  # root_df       - Vegetation rooting parameters as data frame; must contain following fields:
   #                 CLASS, RTHICK1, RTHICK2, RTHICK3, RFRAC1, RFRAC2 and RFRAC3
   # null_glaciers - if TRUE, add NULL glaciers to elevation bands missing glacier HRUs
-  # glacierID   - define vegetation class id for glacier cover; only required if null_glaciers=TRUE
-  # write_vpf   - if TRUE, vegetation parameter file is written; default is FALSE
-  # writ_snb    - if TRUE, band parameter file is written; default is FALSE
-  # max_bands   - maximum number of bands for band file
+  # glacierID     - define vegetation class id for glacier cover; only required if null_glaciers=TRUE
+  # write_vpf     - if TRUE, vegetation parameter file is written; default is FALSE
+  # writ_snb      - if TRUE, band parameter file is written; default is FALSE
+  # vpf_filename  - Name of output vegetation parameter file (if write_vpf=TRUE)
+  # snb_filename  - Name of output snowband file (if write_snb=TRUE)
+  # max_bands     - maximum number of bands for band file
   #
   
   #DETAILS:
@@ -144,7 +148,7 @@ make_VIC_param <- function(hru_df,
   
   #Write HRU parameters to VIC-formatted file
   if (write_vpf) {
-    vpf_file <- file(description="vpf_default.txt", open="w")
+    vpf_file <- file(description = vpf_filename, open="w")
     for (x in 1:no_cells){
       txt_hdr <- sprintf(c("%.0f","%5.0f"), c(out_list$CELL_ID[x], out_list$NO_HRU[x]))
       write(txt_hdr, file=vpf_file, ncolumns=2)
@@ -159,7 +163,7 @@ make_VIC_param <- function(hru_df,
   
   #Write band parameters to VIC-formatted file
   if (write_snb) {
-    band_file <- file(description="snb_default.txt", open="w")
+    band_file <- file(description = snb_filename, open="w")
     for (x in 1:no_cells){
       #Formatted text for cell ID, band area fraction, elevation and add dummy values for
       #precipitation gradient; pad with zeros to max_bands
