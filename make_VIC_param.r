@@ -16,7 +16,8 @@ make_VIC_param <- function(hru_df,
   # Units (HRUs).
   
   #USAGE
-  # make_VIC_param_file(hru_df, root_df, [null_glaciers=FALSE], [glacierID=22], [write_vpf=TRUE], [write_snb=TRUE], [max_bands=n])
+  # make_VIC_param_file(hru_df, root_df, [null_glaciers=FALSE], [glacierID=22], [write_vpf=TRUE], 
+  #     [write_snb=TRUE], [vpf_filename="text_"], [snb_filename="text_"], [max_bands=n])
   
   #ARGUMENTS:
   # hru_df        - HRU attribute table as data frame; must contain following fields: CLASS,
