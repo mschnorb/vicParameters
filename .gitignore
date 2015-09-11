@@ -6,3 +6,5 @@ vpf_default.txt
 *.svg
 *.pdf
 .Rproj.user
+.RData
+.Rhistory
