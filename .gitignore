@@ -1,10 +1,10 @@
 .Rproj*
+.Rproj.user
+.RData
+.Rhistory
 snb_default.txt
 vpf_default.txt
 *.txt
 *.png
 *.svg
 *.pdf
-.Rproj.user
-.RData
-.Rhistory
