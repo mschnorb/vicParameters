@@ -2,7 +2,8 @@ plot_hypsometry <- function(hru_df, by_cell=FALSE){
   
   #Plot study area hypsometry (cumulative basin area by elevation)
   
-  require("ggplot2", "plyr")
+  require("ggplot2")
+  require("plyr")
   
   #Order data and calculate cumulative area fraction
   no_cells <- length(unique(hru_df$CELL_ID))

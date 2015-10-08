@@ -1,4 +1,3 @@
-.Rproj*
 .Rproj.user
 .RData
 .Rhistory
@@ -9,3 +8,4 @@ vpf_default.txt
 *.svg
 *.pdf
 hru_objects
+/figures
