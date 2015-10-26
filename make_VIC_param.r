@@ -20,8 +20,8 @@ make_VIC_param <- function(hru_df,
   #     [write_snb=TRUE], [vpf_filename="text_"], [snb_filename="text_"], [max_bands=n])
   
   #ARGUMENTS:
-  # hru_df        - HRU attribute table as data frame; must contain following fields: CLASS,
-  #                 CELL_ID, BAND_ID, AREA_FRAC and ELEVATION
+  # hru_df        - HRU attribute table as data frame; must contain following fields: CELL_ID, 
+  #                 BAND_ID, CLASS, AREA and ELEVATION
   # root_df       - Vegetation rooting parameters as data frame; must contain following fields:
   #                 CLASS, RTHICK1, RTHICK2, RTHICK3, RFRAC1, RFRAC2 and RFRAC3
   # null_glaciers - if TRUE, add NULL glaciers to elevation bands missing glacier HRUs
@@ -63,13 +63,24 @@ make_VIC_param <- function(hru_df,
   bnd <- NULL          #Dynamic matrix of band parameter records
   vparams <- NULL      #Matrix of HRU parameter records for a given cell
   bparams <- NULL      #Matrix of band parameter records for a given cell
- 
-  #Pre-process data
+  
+  # Internal function(s) ###
+  find.cell.area <- function(cellid, area_df){
+    ii <- which(area_df$CELL_ID == cellid)
+    return(area_df$CELL_AREA[ii])
+  }
+  #######################
+  
+  #Pre-process hru data ###
   hru_df <- arrange(hru_df, CELL_ID, BAND_ID, CLASS)  #Ensure data frame is sorted
-  cells <- unique(hru_df$CELL_ID)   #Obtain vector of unique cell IDs
+  cells <- unique(hru_df$CELL_ID) #vector of unique cell IDs
   no_cells <- length(cells)
+  cell_area_df <- ddply(hru_df, .(CELL_ID), summarise, CELL_AREA=sum(AREA))  #calculate cell area
+  area_vector <- sapply(hru_df$CELL_ID, find.cell.area, cell_area_df)
+  hru_df$AREA_FRAC <- hru_df$AREA/area_vector
+  #hru_df$AREA_FRAC <- hru_df$AREA/(sapply(hru_df$CELL_ID, find.cell.area(), cell_area_df))  #calculate HRU area fractions
   band_df <- ddply(hru_df, .(CELL_ID, BAND_ID), summarise, AREA_FRAC=sum(AREA_FRAC),
-                        ELEVATION=mean(ELEVATION))  #Summary by cell and elevation band
+                   ELEVATION=mean(ELEVATION)) #Summary by cell and elevation band
   
   #Loop through individual cells
   for (cell in cells){
