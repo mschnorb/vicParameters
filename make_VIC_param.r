@@ -65,7 +65,8 @@ make_VIC_param <- function(hru_df,
   bparams <- NULL      #Matrix of band parameter records for a given cell
   
   # Internal function(s) ###
-  find.cell.area <- function(cellid, area_df){
+  find.cell.area <- function(cellid,
+                             area_df){
     ii <- which(area_df$CELL_ID == cellid)
     return(area_df$CELL_AREA[ii])
   }
