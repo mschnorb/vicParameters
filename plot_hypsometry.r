@@ -5,6 +5,21 @@ plot_hypsometry <- function(hru_df, by_cell=FALSE){
   require("ggplot2")
   require("plyr")
   
+  # Internal function(s) ###
+  find.cell.area <- function(cellid,
+                             area_df){
+    ii <- which(area_df$CELL_ID == cellid)
+    return(area_df$CELL_AREA[ii])
+  }
+  #######################
+  
+  #Calculate HRU area fractions if not already included in hru_df
+  if(is.na(match("AREA_FRAC", names(hru_df)))){
+    cell_area_df <- ddply(hru_df, .(CELL_ID), summarise, CELL_AREA=sum(AREA))
+    area_vector <- sapply(hru_df$CELL_ID, find.cell.area, cell_area_df)
+    hru_df$AREA_FRAC <- hru_df$AREA/area_vector
+  }
+  
   #Order data and calculate cumulative area fraction
   no_cells <- length(unique(hru_df$CELL_ID))
   if (!by_cell){
