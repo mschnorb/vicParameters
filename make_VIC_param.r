@@ -2,10 +2,8 @@ make_VIC_param <- function(hru_df,
                            root_df,
                            null_glaciers=FALSE, 
                            glacierID=22, 
-                           write_vpf=FALSE, 
-                           write_snb=FALSE,
-                           vpf_filename="vpf_default.txt",
-                           snb_filename="snb_default.txt",
+                           vpf_filename=NULL,
+                           snb_filename=NULL,
                            max_bands=20){
   
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -26,10 +24,8 @@ make_VIC_param <- function(hru_df,
   #                 CLASS, RTHICK1, RTHICK2, RTHICK3, RFRAC1, RFRAC2 and RFRAC3
   # null_glaciers - if TRUE, add NULL glaciers to elevation bands missing glacier HRUs
   # glacierID     - define vegetation class id for glacier cover; only required if null_glaciers=TRUE
-  # write_vpf     - if TRUE, vegetation parameter file is written; default is FALSE
-  # writ_snb      - if TRUE, band parameter file is written; default is FALSE
-  # vpf_filename  - Name of output vegetation parameter file (if write_vpf=TRUE)
-  # snb_filename  - Name of output snowband file (if write_snb=TRUE)
+  # vpf_filename  - Name of output vegetation parameter file (default is NULL)
+  # snb_filename  - Name of output snowband file (default is NULL)
   # max_bands     - maximum number of bands for band file
   #
   
@@ -79,7 +75,6 @@ make_VIC_param <- function(hru_df,
   cell_area_df <- ddply(hru_df, .(CELL_ID), summarise, CELL_AREA=sum(AREA))  #calculate cell area
   area_vector <- sapply(hru_df$CELL_ID, find.cell.area, cell_area_df)
   hru_df$AREA_FRAC <- hru_df$AREA/area_vector
-  #hru_df$AREA_FRAC <- hru_df$AREA/(sapply(hru_df$CELL_ID, find.cell.area(), cell_area_df))  #calculate HRU area fractions
   band_df <- ddply(hru_df, .(CELL_ID, BAND_ID), summarise, AREA_FRAC=sum(AREA_FRAC),
                    ELEVATION=mean(ELEVATION)) #Summary by cell and elevation band
   
@@ -160,7 +155,7 @@ make_VIC_param <- function(hru_df,
                    VPARAM=vparams, BAND=bparams)
   
   #Write HRU parameters to VIC-formatted file
-  if (write_vpf) {
+  if (!is.null(vpf_filename)) {
     vpf_file <- file(description = vpf_filename, open="w")
     for (x in 1:no_cells){
       txt_hdr <- sprintf(c("%.0f","%5.0f"), c(out_list$CELL_ID[x], out_list$NO_HRU[x]))
@@ -175,15 +170,13 @@ make_VIC_param <- function(hru_df,
   }
   
   #Write band parameters to VIC-formatted file
-  if (write_snb) {
+  if (!is.null(snb_filename)) {
     band_file <- file(description = snb_filename, open="w")
     for (x in 1:no_cells){
-      #Formatted text for cell ID, band area fraction, elevation and add dummy values for
-      #precipitation gradient; pad with zeros to max_bands
+      #Formatted text for cell ID, band area fraction, elevation; pad with zeros to max_bands
       txt_af <- sprintf("%14.12f", c(out_list$BAND[[x]][,2], rep(0, max_bands-out_list$NO_BANDS[x])))
-      txt_elev <- sprintf("%5.0f", c(out_list$BAND[[x]][,1], rep(0, max_bands-out_list$NO_BANDS[x])))      
-      txt_pg <- sprintf("%7.5f", c(rep(1/out_list$NO_BANDS[x],out_list$NO_BANDS[x]), rep(0, max_bands-out_list$NO_BANDS[x])))
-      write(c(sprintf("%5.0f", out_list$CELL_ID[x]), txt_af, txt_elev, txt_pg), file=band_file, ncolumns=3*max_bands+1)
+      txt_elev <- sprintf("%5.0f", c(out_list$BAND[[x]][,1], rep(0, max_bands-out_list$NO_BANDS[x])))
+      write(c(sprintf("%5.0f", out_list$CELL_ID[x]), txt_af, txt_elev), file=band_file, ncolumns=2*max_bands+1)
     }
     close(band_file)
   }

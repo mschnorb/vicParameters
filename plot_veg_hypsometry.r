@@ -73,6 +73,7 @@ plot_veg_hypsometry <- function(hru_df,
       geom_bar(aes(fill=factor(CLASS)), stat="identity") +
       scale_fill_manual(labels = leg$lbl, values=leg$clr) +
       theme_bw() + 
+      scale_x_continuous(limits=c(0,4000)) + 
       labs(x="Elevation (m)", y="Area Fraction", color="Cell ID", fill="Land Cover", 
            title="Vegetation Class Hypsometry") +
       coord_flip()    
