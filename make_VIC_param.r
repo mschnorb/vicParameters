@@ -14,8 +14,8 @@ make_VIC_param <- function(hru_df,
   # Units (HRUs).
   
   #USAGE
-  # make_VIC_param_file(hru_df, root_df, [null_glaciers=FALSE], [glacierID=22], [write_vpf=TRUE], 
-  #     [write_snb=TRUE], [vpf_filename="text_"], [snb_filename="text_"], [max_bands=n])
+  # make_VIC_param_file(hru_df, root_df, [null_glaciers=FALSE], [glacierID=22], 
+  #     [vpf_filename="text_"], [snb_filename="text_"], [max_bands=n])
   
   #ARGUMENTS:
   # hru_df        - HRU attribute table as data frame; must contain following fields: CELL_ID, 
@@ -44,7 +44,7 @@ make_VIC_param <- function(hru_df,
   #                 elevation band parameters, with one record per cell band
   #
   # If selected by user, function side-effect is to write default vegetation parameter file
-  #"vpf_default.txt" and/or band parameter file "snb_default.txt" to the current working directory. 
+  #"and/or band parameter file to the current working directory. 
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
   #Load dependencies
@@ -60,13 +60,13 @@ make_VIC_param <- function(hru_df,
   vparams <- NULL      #Matrix of HRU parameter records for a given cell
   bparams <- NULL      #Matrix of band parameter records for a given cell
   
-  # Internal function(s) ###
+  # Internal function(s) ###################
   find.cell.area <- function(cellid,
                              area_df){
     ii <- which(area_df$CELL_ID == cellid)
     return(area_df$CELL_AREA[ii])
   }
-  #######################
+  ##########################################
   
   #Pre-process hru data ###
   hru_df <- arrange(hru_df, CELL_ID, BAND_ID, CLASS)  #Ensure data frame is sorted
