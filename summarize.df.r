@@ -1,7 +1,6 @@
 summarize.df <- function(x){
-  d <- ddply(x, .(CLASS), summarize, AREA_FRAC=sum(AREA_FRAC))
-  d$ELEVATION <- sum(x$ELEVATION*x$AREA_FRAC)/sum(x$AREA_FRAC)
-  d$BAND_ID <- d$ELEVATION
+  d <- ddply(x, .(CLASS), summarize, AREA=sum(AREA), ELEV=median(ELEVATION))
+  d$AREA_FRAC <- d$AREA/sum(d$AREA)
   
   return(d)
   
