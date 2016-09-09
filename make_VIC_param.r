@@ -22,11 +22,14 @@ make_VIC_param <- function(hru_df,
   #                 BAND_ID, CLASS, AREA and ELEVATION
   # root_df       - Vegetation rooting parameters as data frame; must contain following fields:
   #                 CLASS, RTHICK1, RTHICK2, RTHICK3, RFRAC1, RFRAC2 and RFRAC3
-  # null_glaciers - if TRUE, add NULL glaciers to elevation bands missing glacier HRUs
+  # null_glaciers - if TRUE, add NULL glaciers to elevation bands missing glacier HRUs; also add a
+  #                 blank bottom elevation band for each cell in snb_filename
   # glacierID     - define vegetation class id for glacier cover; only required if null_glaciers=TRUE
   # vpf_filename  - Name of output vegetation parameter file (default is NULL)
   # snb_filename  - Name of output snowband file (default is NULL)
-  # max_bands     - maximum number of bands for band file
+  # max_bands     - maximum number of bands for band file. Note that if null_glaciers = TRUE, then
+  #                 max_bands should leave room for two extra bands (one below and one above the
+  #                 existing bands)
   #
   
   #DETAILS:
@@ -97,15 +100,19 @@ make_VIC_param <- function(hru_df,
     BAND_AF <- bands$AREA_FRAC * area_corr
     
     GlacierInBand <- FALSE  #Set to TRUE if a glacier HRU (CLASS=glacierID) exists in current band
-    prevBandIndex <- 0      #Track band index of previous record; initialize as zero for first record 
+    if(null_glaciers){      #Track band index of previous record; initialize as zero or one for first record
+      prevBandIndex <- 1
+    } else {
+      prevBandIndex <- 0       
+    }
     numNullGlaciers <- 0    #Number of null glacier HRUs in cell - add to record length
     
     #Loop through individual hru records
     for (r in 1:no_recs){
       
       #Determine band index - currently indexed from minimum BAND_ID per cell
-      #TODO - should band index be based on common base elevation/BAND_ID?
       band_index <- which(band_ids == recs$BAND_ID[r])-1
+      if(null_glaciers) band_index <- band_index+1  #Shift index to account for extra bottom band
       
       #Add NULL glacier HRUs if option selected by user
       if(null_glaciers) {
@@ -117,7 +124,7 @@ make_VIC_param <- function(hru_df,
           GlacierInBand <- FALSE
         }
         prevBandIndex <- band_index
-        if (recs$CLASS[r]==glacierID) GlacierInBand<-TRUE
+        if (recs$CLASS[r]==glacierID) GlacierInBand <- TRUE
       }
       
       #Look up appropriate rooting parameters from root_df based on vegetation class (CLASS)
@@ -169,14 +176,22 @@ make_VIC_param <- function(hru_df,
     close(vpf_file)
   }
   
-  #Write band parameters to VIC-formatted file
+  #Write band parameters to VIC-formatted file; extra band added below existing bands if
+  #null_glaciers = TRUE
   if (!is.null(snb_filename)) {
     band_file <- file(description = snb_filename, open="w")
     for (x in 1:no_cells){
       #Formatted text for cell ID, band area fraction, elevation; pad with zeros to max_bands
-      txt_af <- sprintf("%14.12f", c(out_list$BAND[[x]][,2], rep(0, max_bands-out_list$NO_BANDS[x])))
-      txt_elev <- sprintf("%5.0f", c(out_list$BAND[[x]][,1], rep(0, max_bands-out_list$NO_BANDS[x])))
-      write(c(sprintf("%5.0f", out_list$CELL_ID[x]), txt_af, txt_elev), file=band_file, ncolumns=2*max_bands+1)
+      n_padded_bands <- max_bands - out_list$NO_BANDS[x]
+      if(null_glaciers) n_padded_bands <- n_padded_bands - 1
+      if(null_glaciers){ #Write additional blank elevation band at 'below' existing bands
+        txt_af <- sprintf("%14.12f", c(0.0, out_list$BAND[[x]][,2], rep(0, n_padded_bands)))
+        txt_elev <- sprintf("%5.0f", c(0.0, out_list$BAND[[x]][,1], rep(0, n_padded_bands)))
+      } else { #Write elevation bands normally
+        txt_af <- sprintf("%14.12f", c(out_list$BAND[[x]][,2], rep(0, n_padded_bands)))
+        txt_elev <- sprintf("%5.0f", c(out_list$BAND[[x]][,1], rep(0, n_padded_bands)))
+      }
+        write(c(sprintf("%5.0f", out_list$CELL_ID[x]), txt_af, txt_elev), file=band_file, ncolumns=2*max_bands+1)
     }
     close(band_file)
   }
