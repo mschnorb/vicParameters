@@ -138,6 +138,11 @@ make_VIC_param <- function(hru_df,
       
       hru <- rbind(hru, c(recs$CLASS[r], HRU_AF[r], thick1, rfrac1, thick2, rfrac2, thick3, rfrac3, band_index))
     }
+    #Check for glacier HRU in topmost band
+    if(null_glaciers & !GlacierInBand) {
+      hru <- rbind(hru, c(glacierID, 0.0, 0.1, 1.00, 0.1, 0.0, 0.1, 0.0, band_index))
+      numNullGlaciers <- numNullGlaciers + 1
+    }
     
     #Loop through individual bands
     for (b in 1:no_bands){

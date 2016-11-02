@@ -1,5 +1,5 @@
 .Rproj.user
-.RData
+*.RData
 .Rhistory
 snb_default.txt
 vpf_default.txt

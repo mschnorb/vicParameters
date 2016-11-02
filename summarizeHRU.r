@@ -6,7 +6,7 @@ summarizeHRU <- function(hru_df,
   
   #ARGUMENT(S):
   # hru_df -  data frame of HRUs
-  # qc -       quality control flag; default is FALSE 
+  # qc -      quality control flag; default is FALSE 
   # minBand - minimum band ID
   
   require("plyr")
