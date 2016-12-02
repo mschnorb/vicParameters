@@ -3,24 +3,27 @@
 #####################################################################################################
 #USAGE: Rcsript [options] wrapper_make_VIC_param.r [ARGUMENTS]
 
-#DESCRIPTION: Build VICGL vegetation and band parameters
+#DESCRIPTION: Write VICGL vegetation and band parameters to file
 
 #ARGUMENTS:
-# -u, --hrudf -   HRU data frame object
-# -r, --rootdf -  Rooting depth data frame object
-# -d, --dfile -   RData source file 
-# -f, --fncfile - Name of R source file for function make_VIC_param()
-# -g, --glacid -  ID of glacier land cover class
-# -b, --maxb -    Maximum number of elevation bands in band file
-# -n, --nullg -   If TRUE, add NULL glaciers ot vegetation parameter file and extra bottom band to band file
-# -v, --vpfile -  Name of vegetation parameter file
-# -s, --sbfile -  Name of elevation band file
-# -S, --save -    Save function output to *.RData file
+# -u, --hrudf -   HRU data frame object [required]
+# -r, --rootdf -  Rooting depth data frame object [required]
+# -d, --dfile -   RData source file [required]
+# -v, --vpfile -  Name of vegetation parameter file [required]
+# -s, --sbfile -  Name of elevation band file [required]
+# -f, --fncfile - Name of R source file for function make_VIC_param() [required]
+# -g, --glacid -  ID of glacier land cover class [default = 22]
+# -b, --maxb -    Maximum number of elevation bands in band file [default = 20]
+# -n, --nullg -   If TRUE, add NULL glaciers to vegetation parameter file and extra bottom band to band file [default = FALSE]
+# -S, --save -    Save function output to *.RData file [default = FALSE]
 # -h, --help -    print help message
 
 #DETAILS:
-# Script uses tryCatch() to print 'result', which will either be TRUE (if successful), or an error/
-# warning (if not successful). A side effect of the script is to write various text files.
+# Script uses side-effect of function make_VIC_param() to generate VICGL parameters and write the
+# vegetation and band parameter files. The -S or --save flags can also be used to save the return
+# value of the function make_VIC_param() to an *.RData file. See the documentation for make_VIC_param()
+# for a detailed desription of the function return value. Script uses tryCatch() to print 'result',
+# which will either be TRUE (if successful), or an error/warning (if not successful).
 #####################################################################################################
 
 #Parse arguments
@@ -45,7 +48,7 @@ if(is.null(opt$fncfile)) stop("Missing argument for 'fncfile'. Use -h or --help 
 if(is.null(opt$vpfile))  stop("Missing argument for 'vpfile'. Use -h or --help flag for usage.")
 if(is.null(opt$sbfile))  stop("Missing argument for 'sbfile'. Use -h or --help flag for usage.")
 
-#Load source file(s)
+#Load/source file(s)
 load(opt$dfile)
 source(opt$fncfile)
 e <- environment()

@@ -5,16 +5,14 @@ make_VIC_param <- function(hru_df,
                            vpf_filename=NULL,
                            snb_filename=NULL,
                            max_bands=20){
-  
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  
   #DESCRIPTION
   # Creates formatted output of vegetation and band parameters for VIC model version
-  # 4.1.2glacier; vegetation and band parameters based on the use of Hydrologic Response
+  # VICGL; vegetation and band parameters based on the use of Hydrologic Response
   # Units (HRUs).
   
   #USAGE
-  # make_VIC_param_file(hru_df, root_df, [null_glaciers=FALSE], [glacierID=22], 
+  # make_VIC_param(hru_df, root_df, [null_glaciers=FALSE], [glacierID=22], 
   #     [vpf_filename="text_"], [snb_filename="text_"], [max_bands=n])
   
   #ARGUMENTS:
@@ -47,7 +45,7 @@ make_VIC_param <- function(hru_df,
   #                 elevation band parameters, with one record per cell band
   #
   # If selected by user, function side-effect is to write default vegetation parameter file
-  #"and/or band parameter file to the current working directory. 
+  # and/or band parameter file to the current working directory. 
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   
   #Load dependencies
@@ -67,8 +65,7 @@ make_VIC_param <- function(hru_df,
   find.cell.area <- function(cellid,
                              area_df){
     ii <- which(area_df$CELL_ID == cellid)
-    return(area_df$CELL_AREA[ii])
-  }
+    return(area_df$CELL_AREA[ii]) }
   ##########################################
   
   #Pre-process hru data ###
@@ -137,7 +134,8 @@ make_VIC_param <- function(hru_df,
       rfrac3 = root_df$RFRAC3[rt_index]    #Fraction of roots in bottom root zone [m]
       
       hru <- rbind(hru, c(recs$CLASS[r], HRU_AF[r], thick1, rfrac1, thick2, rfrac2, thick3, rfrac3, band_index))
-    }
+    } #HRU Loop
+    
     #Check for glacier HRU in topmost band
     if(null_glaciers & !GlacierInBand) {
       hru <- rbind(hru, c(glacierID, 0.0, 0.1, 1.00, 0.1, 0.0, 0.1, 0.0, band_index))
@@ -160,7 +158,7 @@ make_VIC_param <- function(hru_df,
     hru <- NULL
     bnd <- NULL
     
-  }
+  } #Cell Loop
   
   #Generate output list
   out_list <- list(NO_CELLS=no_cells, CELL_ID=cell_vec, NO_HRU=no_recs_vec, NO_BANDS=no_bands_vec,
