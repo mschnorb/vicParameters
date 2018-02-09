@@ -6,14 +6,16 @@
 #DESCRIPTION: Write VICGL vegetation and band parameters to file
 
 #ARGUMENTS:
+# -d, --dfile -   RData source file [required]
 # -u, --hrudf -   HRU data frame object [required]
 # -r, --rootdf -  Rooting depth data frame object [required]
-# -d, --dfile -   RData source file [required]
+# -b, --basin -   Sub-basin name
+# -c, --celldf -  Cell map data frame object
 # -v, --vpfile -  Name of vegetation parameter file [required]
 # -s, --sbfile -  Name of elevation band file [required]
 # -f, --fncfile - Name of R source file for function make_VIC_param() [required]
 # -g, --glacid -  ID of glacier land cover class [default = 22]
-# -b, --maxb -    Maximum number of elevation bands in band file [default = 20]
+# -z, --maxz -    Maximum number of elevation bands in band file [default = 20]
 # -n, --nullg -   If TRUE, add NULL glaciers to vegetation parameter file and extra bottom band to band file [default = FALSE]
 # -S, --save -    Save function output to *.RData file [default = FALSE]
 # -h, --help -    print help message
@@ -29,21 +31,23 @@
 #Parse arguments
 library('optparse')
 option_list <- list(
+  make_option(c("-d", "--dfile"),   action="store", type="character", help="Name of RData file containing hrudf, rootdf and, optionally, celldf [required]"),
   make_option(c("-u", "--hrudf"),   action="store", type="character", help="HRU data frame object [required]"),
   make_option(c("-r", "--rootdf"),  action="store", type="character", help="Rooting depth data frame object [required]"),
-  make_option(c("-d", "--dfile"),   action="store", type="character", help="Name of RData file [required]"),
+  make_option(c("-b", "--basin"),   action="store", type="character", help="Sub-basin name [optional]"),
+  make_option(c("-c", "--celldf"),  action="store", type="character", help="Cell map data frame object [required if --basin set]"),
   make_option(c("-v", "--vpfile"),  action="store", type="character", help="Name of output vegetation parameter file [required]"),
   make_option(c("-s", "--sbfile"),  action="store", type="character", help="Name of output elevation band parameter file [required]"),
   make_option(c("-f", "--fncfile"), action="store", type="character", help="R function(s) source code file [required]"),
-  make_option(c("-g", "--glacid"),  action="store", type="integer", default=22, help="ID of glacioer landcover class [default is 22]"),
-  make_option(c("-b", "--maxb"),    action="store", type="integer", default=20, help="Maximum number of bands for band file [default is 20]"),
+  make_option(c("-g", "--glacid"),  action="store", type="integer", default=22, help="ID of glacier landcover class [default is 22]"),
+  make_option(c("-z", "--maxz"),    action="store", type="integer", default=20, help="Maximum number of bands for band file [default is 20]"),
   make_option(c("-n", "--nullg"),   action="store_true", default=FALSE, help="Add null glaciers to elevation bands missing glacier HRUs and add blank bottom elevation band for each cell"),
   make_option(c("-S", "--save"),    action="store_true", default=FALSE, help="Save results to *.RData file")
 )
 opt <- parse_args(OptionParser(option_list=option_list))
+if(is.null(opt$dfile))   stop("Missing argument for 'dfile'. Use -h or --help flag for usage.")
 if(is.null(opt$hrudf))   stop("Missing argument for 'hrudf'. Use -h or --help flag for usage.")
 if(is.null(opt$rootdf))  stop("Missing argument for 'rootdf'. Use -h or --help flag for usage.")
-if(is.null(opt$dfile))   stop("Missing argument for 'dfile'. Use -h or --help flag for usage.")
 if(is.null(opt$fncfile)) stop("Missing argument for 'fncfile'. Use -h or --help flag for usage.")
 if(is.null(opt$vpfile))  stop("Missing argument for 'vpfile'. Use -h or --help flag for usage.")
 if(is.null(opt$sbfile))  stop("Missing argument for 'sbfile'. Use -h or --help flag for usage.")
@@ -53,10 +57,22 @@ load(opt$dfile)
 source(opt$fncfile)
 e <- environment()
 
+#Subset main data frame if required
+if(!is.null(opt$basin)){
+  if(is.null(opt$celldf)) stop("Must specifiy cell map data frame object if providing sub-basin name. Use -h or --help flag for usage.")
+  cell_map <- e[[opt$celldf]]
+  ind <- which(cell_map$NAME==opt$basin)
+  if(length(ind)==0) stop(paste("Sub-basin '", opt$basin, "' could not be found in supplied data frame.", sep=""))
+  cells <- cell_map$CELL_ID[ind]
+  inFrame <- do.call(rbind, lapply(cells, function(x, dfy){dfy[which(dfy$CELL_ID==x),]}, e[[opt$hrudf]]))
+} else {
+  inFrame <- e[[opt$hrudf]]
+}
+
 #Construct VICGL parameters
 result <- tryCatch({
-  rslt <- make_VIC_param(e[[opt$hrudf]], e[[opt$rootdf]], vpf_filename=opt$vpfile, snb_filename=opt$sbfile,
-                         null_glaciers=opt$nullg, glacierID=opt$glacid, max_bands=opt$maxb)
+  rslt <- make_VIC_param(inFrame, e[[opt$rootdf]], vpf_filename=opt$vpfile, snb_filename=opt$sbfile,
+                         null_glaciers=opt$nullg, glacierID=opt$glacid, max_bands=opt$maxz)
   if(opt$save) save(rslt, file="param.RData")
   rslt <- TRUE
 }, warning = function(war){
@@ -68,4 +84,4 @@ result <- tryCatch({
 }) #End tryCatch
 
 #Print 'result' - potentially used by calling scripts to test for succesful completion.
-cat(result)
+cat(result, "\n")

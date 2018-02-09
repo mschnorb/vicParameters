@@ -11,16 +11,16 @@ plot_cum_veg_hypsometry <- function(hru_df){
   
   #Normalize area fractions
   no_cells <- length(unique(hru_df$CELL_ID))
-  hru_df$AREA_FRAC <- hru_df$AREA_FRAC/no_cells
+  hru_df$AREA <- hru_df$AREA/no_cells
   
   #Calculate cumulative area by vegetation class
   ii <- order(hru_df$CLASS, hru_df$ELEVATION)
-  hru_df <- hru_df[ii,-1]
-  temp_df <- ddply(hru_df, .(CLASS), cumsum) #Order df, remove first column (POLY_ID), and take cumsum
-  hru_df$CAREA_FRAC <- temp_df$AREA_FRAC
+  hru_df <- hru_df[ii,-3]
+  temp_df <- ddply(hru_df, .(CLASS), cumsum) #Order df, remove POLY_ID, and take cumsum
+  hru_df$CAREA <- temp_df$AREA
 
   #Build ggplot by layers
-  gplot <- ggplot(data=hru_df, aes(x=ELEVATION, y=CAREA_FRAC)) + 
+  gplot <- ggplot(data=hru_df, aes(x=ELEVATION, y=CAREA)) + 
     geom_line(aes(color=factor(CLASS)), size=1) + 
     scale_color_manual("Land Cover", labels = leg$lbl, values=leg$clr) + 
     labs(x="Elevation (m)", y="Cumulative Area Fraction", title="Cumulative Vegetation Hypsometry") +
