@@ -44,7 +44,8 @@ set_veg_legend <- function(c){
               "#a8abad",
               "#db2126",
               "#4d70a3",
-              "#ddfffd")
+#              "#ddfffd")
+              "#05FFFF")
   
   index <- match(c, seq(1:22))
   

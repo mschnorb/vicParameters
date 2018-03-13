@@ -187,7 +187,7 @@ make_VIC_param <- function(hru_df,
       #Formatted text for cell ID, band area fraction, elevation; pad with zeros to max_bands
       n_padded_bands <- max_bands - out_list$NO_BANDS[x]
       if(null_glaciers) n_padded_bands <- n_padded_bands - 1
-      if(null_glaciers){ #Write additional blank elevation band at 'below' existing bands
+      if(null_glaciers){ #Write additional blank elevation band 'below' existing bands
         txt_af <- sprintf("%14.12f", c(0.0, out_list$BAND[[x]][,2], rep(0, n_padded_bands)))
         txt_elev <- sprintf("%5.0f", c(0.0, out_list$BAND[[x]][,1], rep(0, n_padded_bands)))
       } else { #Write elevation bands normally

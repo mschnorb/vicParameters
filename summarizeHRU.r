@@ -23,6 +23,8 @@ summarizeHRU <- function(hru_df,
   print(paste("    Minimum band ID:", min(hru_df$BAND_ID), sep=" "))
   print(paste("    Maximum band ID:", max(hru_df$BAND_ID), sep=" "))
   print(paste(" Maximum band range:", max(ddply(hru_df, .(CELL_ID), summarize, range=max(BAND_ID)-min(BAND_ID))$range), sep=" "))
+  print(paste("       Minimum area:", min(hru_df$AREA), sep=" "))
+  print(paste("       Maximum area:", max(hru_df$AREA), sep=" "))
   print(paste("         Total area:", sum(hru_df$AREA), sep=" "))
   print(paste("    Number of cells:", length(unique(hru_df$CELL_ID)), sep=" "))
   print(paste("  Average cell size:", sum(hru_df$AREA)/length(unique(hru_df$CELL_ID)), sep=" "))

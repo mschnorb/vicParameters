@@ -51,15 +51,24 @@ if(is.null(opt$rootdf))  stop("Missing argument for 'rootdf'. Use -h or --help f
 if(is.null(opt$fncfile)) stop("Missing argument for 'fncfile'. Use -h or --help flag for usage.")
 if(is.null(opt$vpfile))  stop("Missing argument for 'vpfile'. Use -h or --help flag for usage.")
 if(is.null(opt$sbfile))  stop("Missing argument for 'sbfile'. Use -h or --help flag for usage.")
+if(!is.null(opt$basin)){
+  if(is.null(opt$celldf)) stop("Must specifiy cell map data frame object if providing sub-basin name. Use -h or --help flag for usage.")
+}
 
 #Load/source file(s)
 load(opt$dfile)
 source(opt$fncfile)
 e <- environment()
 
+#Check that all required R objects are present
+if(is.na(match(opt$hrudf, ls(e)))) stop(cat("Specified hru data frame object '", opt$hrudf, "' is missing.\n", sep=""))
+if(is.na(match(opt$rootdf, ls(e)))) stop(cat("Specified root depth data frame object '", opt$rootdf, "' is missing.\n", sep=""))
+if(!is.null(opt$basin)){
+  if(is.na(match(opt$celldf, ls(e)))) stop(cat("Specified cell map data frame object '", opt$celldf, "' is missing.\n", sep=""))
+}
+
 #Subset main data frame if required
 if(!is.null(opt$basin)){
-  if(is.null(opt$celldf)) stop("Must specifiy cell map data frame object if providing sub-basin name. Use -h or --help flag for usage.")
   cell_map <- e[[opt$celldf]]
   ind <- which(cell_map$NAME==opt$basin)
   if(length(ind)==0) stop(paste("Sub-basin '", opt$basin, "' could not be found in supplied data frame.", sep=""))
