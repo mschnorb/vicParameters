@@ -16,6 +16,7 @@
 # -f, --fncfile - Name of R source file for function make_VIC_param() [required]
 # -g, --glacid -  ID of glacier land cover class [default = 22]
 # -z, --maxz -    Maximum number of elevation bands in band file [default = 20]
+# -m, --minb -    BAND_ID of lowest band (i.e. that which includes sea level)
 # -n, --nullg -   If TRUE, add NULL glaciers to vegetation parameter file and extra bottom band to band file [default = FALSE]
 # -S, --save -    Save function output to *.RData file [default = FALSE]
 # -h, --help -    print help message
@@ -41,6 +42,7 @@ option_list <- list(
   make_option(c("-f", "--fncfile"), action="store", type="character", help="R function(s) source code file [required]"),
   make_option(c("-g", "--glacid"),  action="store", type="integer", default=22, help="ID of glacier landcover class [default is 22]"),
   make_option(c("-z", "--maxz"),    action="store", type="integer", default=20, help="Maximum number of bands for band file [default is 20]"),
+  make_option(c("-m", "--minb"),    action="store", type="integer", help="Band ID of lowest elevation band"),
   make_option(c("-n", "--nullg"),   action="store_true", default=FALSE, help="Add null glaciers to elevation bands missing glacier HRUs and add blank bottom elevation band for each cell"),
   make_option(c("-S", "--save"),    action="store_true", default=FALSE, help="Save results to *.RData file")
 )
@@ -54,6 +56,7 @@ if(is.null(opt$sbfile))  stop("Missing argument for 'sbfile'. Use -h or --help f
 if(!is.null(opt$basin)){
   if(is.null(opt$celldf)) stop("Must specifiy cell map data frame object if providing sub-basin name. Use -h or --help flag for usage.")
 }
+if(opt$nullg & is.null(opt$minb)) stop("Must specifiy minimum band ID if nullg set. Use -h or --help flag for usage.")
 
 #Load/source file(s)
 load(opt$dfile)
@@ -81,7 +84,7 @@ if(!is.null(opt$basin)){
 #Construct VICGL parameters
 result <- tryCatch({
   rslt <- make_VIC_param(inFrame, e[[opt$rootdf]], vpf_filename=opt$vpfile, snb_filename=opt$sbfile,
-                         null_glaciers=opt$nullg, glacierID=opt$glacid, max_bands=opt$maxz)
+                         null_glaciers=opt$nullg, glacierID=opt$glacid, max_bands=opt$maxz, min_band_id=opt$minb)
   if(opt$save) save(rslt, file="param.RData")
   rslt <- TRUE
 }, warning = function(war){

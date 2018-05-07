@@ -9,7 +9,7 @@ remove.hru.records <- function(hrudf, zrange=200, th_area=100){
   #th_area - minimum area threshold
   
   #Details:
-  #Find HRU enstries with very small areas (i.e. area < th_area) and merge with
+  #Find HRU entries with very small areas (i.e. area < th_area) and merge with
   #neighbouring HRU records in the same cell. The merging is done in the following
   #order of piority:
   # 1 - merge with HRU in same band

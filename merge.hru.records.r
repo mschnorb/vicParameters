@@ -1,21 +1,17 @@
-merge.hru.records <- function(record1, record2){
+merge.hru.records <-function(hrudf, ind){
   
-  #Description:
-  # Merge fields of record1 with fields of record2
+  tag <- paste(hrudf$POLY_ID, hrudf$CLASS, sep="_")
   
-  #Arguments:
-  #record1 - single record data frame
-  #record2 - single record data frame
+  for(r in ind){
+    i1 <- which(tag==tag[r])
+    i2 <- i1[which(i1 != r)]
+    cell_id <- hrudf$CELL_ID[i2]
+    tarea <- sum(hrudf$AREA[which(hrudf$CELL_ID==cell_id)])
+    hrudf$AREA[i2] <- hrudf$AREA[r] + hrudf$AREA[i2]
+    hrudf$ELEVATION[i2] <- (hrudf$AREA[r]*hrudf$ELEVATION[r] +
+                           hrudf$AREA[i2]*hrudf$ELEVATION[i2])/tarea
+  }
   
-  #Details:
-  # Merge record is equal to record1 for all fields except AREA,
-  # where AREA in the merged record is the sum of the AREA fields
-  # from both records
+  return(hrudf[-ind,])
   
-  #Value:
-  # Single record with merged values
-  
-  record_merge <- record1
-  record_merge$AREA <- record1$AREA + record2$AREA
-  return(record_merge)
 }
